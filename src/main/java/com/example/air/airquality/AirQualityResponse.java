@@ -1,39 +1,66 @@
 package com.example.air.airquality;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 
+import lombok.Getter;
+
+import javax.xml.bind.annotation.*;
 import java.util.List;
-@Data
-@NoArgsConstructor
+
+@Getter
+@XmlRootElement(name = "response")
+@XmlAccessorType(XmlAccessType.FIELD)
 public class AirQualityResponse {
-    private Response response;
+    @XmlElement(name = "header")
+    private Header header;
 
-    @Data
-    public static class Response {
-        private Header header;
-        private Body body;
-    }
+    @XmlElement(name = "body")
+    private Body body;
 
-    @Data
+    @Getter
+    @XmlAccessorType(XmlAccessType.FIELD)
     public static class Header {
+        @XmlElement(name = "resultCode")
         private String resultCode;
+
+        @XmlElement(name = "resultMsg")
         private String resultMsg;
     }
 
-    @Data
+    @Getter
+    @XmlAccessorType(XmlAccessType.FIELD)
     public static class Body {
+        @XmlElementWrapper(name = "items")
+        @XmlElement(name = "item")
         private List<Item> items;
+
+        @XmlElement(name = "numOfRows")
         private int numOfRows;
+
+        @XmlElement(name = "pageNo")
         private int pageNo;
+
+        @XmlElement(name = "totalCount")
         private int totalCount;
     }
 
-    @Data
+    @Getter
+    @XmlAccessorType(XmlAccessType.FIELD)
     public static class Item {
-        private String dataTime;         // 통보시간
-        private String informCode;       // 통보코드 (PM10, PM25)
-        private String informGrade;      // 예보등급 (좋음, 보통, 나쁨, 매우나쁨)
-        private String informOverall;    // 예보개황
-        private String informCause;      // 발생원인
+        @XmlElement(name = "informCode")
+        private String informCode;
+
+        @XmlElement(name = "informCause")
+        private String informCause;
+
+        @XmlElement(name = "informOverall")
+        private String informOverall;
+
+        @XmlElement(name = "informGrade")
+        private String informGrade;
+
+        @XmlElement(name = "informData")
+        private String informData;
+
+        @XmlElement(name = "dataTime")
+        private String dataTime;
     }
 }

@@ -26,4 +26,9 @@ public class RedisConfig {
 
         return redisTemplate;
     }
+    @Bean
+    public AirQualityData airQualityData() {
+        return new AirQualityData();
+    }
+
 }

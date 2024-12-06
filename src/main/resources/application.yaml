@@ -1,0 +1,12 @@
+spring:
+  application:
+    name: air
+
+api:
+  airquality:
+    serviceKey: LX1Fa5ExG4QlJxkuPAQj8DYylJiU1O1b40lWB0K4uk%2F%2FMjcRGyU5YJNBsFJxFhZ2PY49hPWeyZbQrMkKUEH6kA%3D%3D
+
+logging:
+  level:
+    com.example.air: DEBUG
+    org.springframework.web.reactive.function.client.ExchangeFunctions: DEBUG
