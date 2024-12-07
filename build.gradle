@@ -1,55 +1,64 @@
 plugins {
-	id 'java'
-	id 'org.springframework.boot' version '3.4.0'
-	id 'io.spring.dependency-management' version '1.1.6'
+    id 'java'
+    id 'org.springframework.boot' version '3.2.1'
+    id 'io.spring.dependency-management' version '1.1.6'
 }
 
 group = 'com.example'
 version = '0.0.1-SNAPSHOT'
 
 java {
-	toolchain {
-		languageVersion = JavaLanguageVersion.of(21)
-	}
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
 }
 
 repositories {
-	mavenCentral()
+    mavenCentral()
 }
 
 dependencies {
-	// 웹 & API
-	implementation 'org.springframework.boot:spring-boot-starter'
-	implementation 'org.springframework.boot:spring-boot-starter-web'
-	implementation 'org.springframework.boot:spring-boot-starter-webflux'
+    // 웹 & API
+    implementation 'org.springframework.boot:spring-boot-starter'
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-webflux'
 
-	// Redis
-	implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+    // Redis
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
 
-	// JSP
-	implementation 'org.apache.tomcat.embed:tomcat-embed-jasper'
-	implementation 'jakarta.servlet:jakarta.servlet-api'
-	implementation 'jakarta.servlet.jsp.jstl:jakarta.servlet.jsp.jstl-api'
-	implementation 'org.glassfish.web:jakarta.servlet.jsp.jstl'
+    // JSP
+    implementation 'org.apache.tomcat.embed:tomcat-embed-jasper'
+    implementation 'jakarta.servlet:jakarta.servlet-api'
+    implementation 'jakarta.servlet.jsp.jstl:jakarta.servlet.jsp.jstl-api'
+    implementation 'org.glassfish.web:jakarta.servlet.jsp.jstl'
 
-	// Lombok
-	compileOnly 'org.projectlombok:lombok'
-	annotationProcessor 'org.projectlombok:lombok'
+    // Lombok
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
 
-	// 개발 도구
-	developmentOnly 'org.springframework.boot:spring-boot-devtools'
+    // 개발 도구
+    developmentOnly 'org.springframework.boot:spring-boot-devtools'
 
-	// 테스트
-	testImplementation 'org.springframework.boot:spring-boot-starter-test'
-	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    // 테스트
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 
-	implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-xml'
-	implementation 'javax.xml.bind:jaxb-api:2.3.1'
-	implementation 'org.glassfish.jaxb:jaxb-runtime:2.3.1'
-	implementation 'org.springframework:spring-oxm:5.3.9'
+    implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-xml'
+    implementation 'javax.xml.bind:jaxb-api:2.3.1'
+    implementation 'org.glassfish.jaxb:jaxb-runtime:2.3.1'
+    implementation 'org.springframework:spring-oxm:5.3.9'
+
+    implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
+
+
+//    implementation 'org.apache.tomcat.embed:tomcat-embed-jasper'
+//    implementation 'jakarta.servlet:jakarta.servlet-api'
+//    implementation 'jakarta.servlet.jsp.jstl:jakarta.servlet.jsp.jstl-api'
+//    implementation 'org.glassfish.web:jakarta.servlet.jsp.jstl'
 
 }
 
+// dependencies 블록 밖으로 이동
 tasks.named('test') {
-	useJUnitPlatform()
+    useJUnitPlatform()
 }

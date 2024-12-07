@@ -14,7 +14,7 @@ services:
       - SPRING_MVC_VIEW_PREFIX=/WEB-INF/views/
       - SPRING_MVC_VIEW_SUFFIX=.jsp
     ports:
-      - "8081:8080"
+      - "8080:8080"
     depends_on:
       - redis
     volumes:

@@ -1,6 +1,13 @@
 spring:
   application:
     name: air
+  mvc:
+    view:
+      prefix: /WEB-INF/views/
+      suffix: .jsp
+  web:
+    resources:
+      static-locations: classpath:/static/
 
 api:
   airquality:
@@ -10,3 +17,5 @@ logging:
   level:
     com.example.air: DEBUG
     org.springframework.web.reactive.function.client.ExchangeFunctions: DEBUG
+    org.springframework.web: DEBUG
+    org.springframework.web.servlet.view: TRACE

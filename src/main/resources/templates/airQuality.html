@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>대기질 현황</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js"></script>
+</head>
+<body>
+<div style="width: 800px; margin: 0 auto;">
+    <canvas id="airQualityChart"></canvas>
+    <!-- 데이터 디버깅용 -->
+    <div th:if="${airQualityData != null}">
+        <pre th:text="${airQualityData}"></pre>
+    </div>
+</div>
+
+<script th:inline="javascript">
+    // 데이터를 JavaScript 변수로 안전하게 전달
+    const airQualityData = /*[[${airQualityData}]]*/ [];
+    console.log('Air Quality Data:', airQualityData);
+
+    const labels = [];
+    const values = [];
+    const colors = [];
+
+    if (airQualityData) {
+        airQualityData.forEach(item => {
+            if (item.informCode === 'PM10' || item.informCode === 'PM25') {
+                const regions = item.informGrade.split(',');
+                regions.forEach(region => {
+                    const [name, grade] = region.split(' : ');
+                    labels.push(name);
+                    values.push(grade);
+                    colors.push(grade === '좋음' ? '#4CAF50' :
+                        grade === '보통' ? '#FFC107' :
+                            grade === '나쁨' ? '#FF5722' : '#9C27B0');
+                });
+            }
+        });
+    }
+
+    new Chart(document.getElementById('airQualityChart'), {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: '대기질 현황',
+                data: values,
+                backgroundColor: colors
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+</script>
+</body>
+</html>
