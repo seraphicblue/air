@@ -33,8 +33,8 @@ public class AirQualityFetcher {
     private final HttpClient httpClient = HttpClient.newHttpClient();
 
     public String fetchAirQualityData() throws IOException, InterruptedException, ExecutionException {
-        String currentDate = LocalDate.now().format(DateTimeFormatter.ISO_LOCAL_DATE);
-        // 병렬로 두 요청 실행
+        LocalDate yesterday = LocalDate.now().minusDays(1);
+        String currentDate = yesterday.format(DateTimeFormatter.ISO_LOCAL_DATE);        // 병렬로 두 요청 실행
         CompletableFuture<String> pm10Future = CompletableFuture.supplyAsync(() -> {
             try {
                 return fetchAirQualityDataByType(currentDate, "PM10");

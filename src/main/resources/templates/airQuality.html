@@ -7,36 +7,50 @@
 <body>
 <div style="width: 800px; margin: 0 auto;">
     <canvas id="airQualityChart"></canvas>
-    <!-- 데이터 디버깅용 -->
-    <div th:if="${airQualityData != null}">
-        <pre th:text="${airQualityData}"></pre>
-    </div>
 </div>
 
 <script th:inline="javascript">
-    // 데이터를 JavaScript 변수로 안전하게 전달
     const airQualityData = /*[[${airQualityData}]]*/ [];
-    console.log('Air Quality Data:', airQualityData);
 
-    const labels = [];
-    const values = [];
-    const colors = [];
+    function processAirQualityData(data) {
+        // 가장 최근의 데이터만 필터링 (23시 발표)
+        const latestData = data.filter(item =>
+            item.dataTime.includes('23시 발표') &&
+            (item.informCode === 'PM10' || item.informCode === 'PM25')
+        );
 
-    if (airQualityData) {
-        airQualityData.forEach(item => {
-            if (item.informCode === 'PM10' || item.informCode === 'PM25') {
-                const regions = item.informGrade.split(',');
-                regions.forEach(region => {
-                    const [name, grade] = region.split(' : ');
-                    labels.push(name);
-                    values.push(grade);
-                    colors.push(grade === '좋음' ? '#4CAF50' :
-                        grade === '보통' ? '#FFC107' :
-                            grade === '나쁨' ? '#FF5722' : '#9C27B0');
-                });
-            }
+        const labels = [];
+        const values = [];
+        const colors = [];
+
+        latestData.forEach(item => {
+            const regions = item.informGrade.split(',');
+            regions.forEach(region => {
+                const [name, grade] = region.split(' : ');
+                const label = `${name} (${item.informCode})`;
+
+                // 등급을 숫자로 변환
+                let gradeValue;
+                switch(grade.trim()) {
+                    case '좋음': gradeValue = 1; break;
+                    case '보통': gradeValue = 2; break;
+                    case '나쁨': gradeValue = 3; break;
+                    case '매우나쁨': gradeValue = 4; break;
+                    default: gradeValue = 0;
+                }
+
+                labels.push(label);
+                values.push(gradeValue);
+                colors.push(grade.trim() === '좋음' ? '#4CAF50' :
+                    grade.trim() === '보통' ? '#FFC107' :
+                        grade.trim() === '나쁨' ? '#FF5722' : '#9C27B0');
+            });
         });
+
+        return { labels, values, colors };
     }
+
+    const { labels, values, colors } = processAirQualityData(airQualityData);
 
     new Chart(document.getElementById('airQualityChart'), {
         type: 'bar',
@@ -50,9 +64,32 @@
         },
         options: {
             responsive: true,
+            plugins: {
+                title: {
+                    display: true,
+                    text: '지역별 대기질 현황 (PM10/PM2.5)',
+                    font: { size: 16 }
+                },
+                legend: {
+                    display: false
+                }
+            },
             scales: {
                 y: {
-                    beginAtZero: true
+                    beginAtZero: true,
+                    max: 4,
+                    ticks: {
+                        stepSize: 1,
+                        callback: function(value) {
+                            switch(value) {
+                                case 1: return '좋음';
+                                case 2: return '보통';
+                                case 3: return '나쁨';
+                                case 4: return '매우나쁨';
+                                default: return '';
+                            }
+                        }
+                    }
                 }
             }
         }
