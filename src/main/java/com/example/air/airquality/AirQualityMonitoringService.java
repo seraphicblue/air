@@ -75,7 +75,7 @@ public class AirQualityMonitoringService {
 
         for (String region : regions) {
             region = region.trim();
-            if (region.contains("나쁨") || region.contains("매우나쁨") || region.contains("위험")) {
+            if (region.contains("나쁨") || region.contains("매우나쁨")) {
                 currentBadRegions.add(region);
                 log.debug("대기상태 나쁜지역 추가: {}", region);
             }
@@ -124,8 +124,7 @@ public class AirQualityMonitoringService {
         log.debug("등급을 체크합니다.: {}", grade);  // 로깅 추가
         boolean isBad = grade != null && (
                 grade.contains("나쁨") ||
-                        grade.contains("매우나쁨") ||
-                        grade.contains("위험")
+                        grade.contains("매우나쁨")
         );
         log.debug(" {} 해당등급은 나쁜 등급입니다. : {}", grade, isBad);
         return isBad;
