@@ -43,18 +43,23 @@ dependencies {
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 
+    //xml
     implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-xml'
     implementation 'javax.xml.bind:jaxb-api:2.3.1'
     implementation 'org.glassfish.jaxb:jaxb-runtime:2.3.1'
     implementation 'org.springframework:spring-oxm:5.3.9'
 
+    //fe
     implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
 
+    //웹푸시
+    // Selenium 의존성 추가
+    implementation 'org.seleniumhq.selenium:selenium-java:4.16.1'
 
-//    implementation 'org.apache.tomcat.embed:tomcat-embed-jasper'
-//    implementation 'jakarta.servlet:jakarta.servlet-api'
-//    implementation 'jakarta.servlet.jsp.jstl:jakarta.servlet.jsp.jstl-api'
-//    implementation 'org.glassfish.web:jakarta.servlet.jsp.jstl'
+    // Virtual Threads를 위한 jakarta.servlet-api
+    implementation 'jakarta.servlet:jakarta.servlet-api:6.0.0'
+
+
 
 }
 
