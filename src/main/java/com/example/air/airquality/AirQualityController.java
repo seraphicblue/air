@@ -1,5 +1,7 @@
 package com.example.air.airquality;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,6 +24,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 @Slf4j
 @Controller
@@ -74,38 +77,34 @@ public class AirQualityController {
 //        }).subscribeOn(Schedulers.boundedElastic());
 //    }
 @GetMapping("/chart")
-public String showChart(Model model) {
-    try {
-        String xmlResponse = airQualityFetcher.fetchAirQualityData();
+    public String showChart(Model model) {
+        try {
+            String jsonResponse = airQualityFetcher.fetchAirQualityData();
+            ObjectMapper objectMapper = new ObjectMapper();
+            JsonNode rootNode = objectMapper.readTree(jsonResponse);
 
-        // JAXB 컨텍스트를 static final로 캐시
-        final JAXBContext context = JAXBContext.newInstance(AirQualityResponse.class);
-        final Unmarshaller unmarshaller = context.createUnmarshaller();
+            // items 노드 가져오기
+            JsonNode items = rootNode.path("response").path("body").path("items");
 
-        // BufferedReader 사용
-        try (var reader = new BufferedReader(new StringReader(xmlResponse))) {
-            AirQualityResponse response = (AirQualityResponse) unmarshaller.unmarshal(reader);
-
-            // 스트림 처리 최적화
-            var formattedData = response.getBody().getItems().stream()
-                    .filter(item -> item.getInformCode() != null)
+            // 스트림 처리로 데이터 변환
+            List<Map<String, String>> formattedData = StreamSupport.stream(items.spliterator(), false)
+                    .filter(item -> item.has("informCode") && !item.get("informCode").isNull())
                     .map(item -> Map.of(
-                            "informCode", item.getInformCode(),
-                            "informGrade", item.getInformGrade(),
-                            "informData", item.getInformData(),
-                            "dataTime", item.getDataTime()
+                            "informCode", item.get("informCode").asText(),
+                            "informGrade", item.get("informGrade").asText(),
+                            "informData", item.get("informData").asText(),
+                            "dataTime", item.get("dataTime").asText()
                     ))
                     .collect(Collectors.toList());
 
             model.addAttribute("airQualityData", formattedData);
             return "airQuality";
+        } catch (Exception e) {
+            log.error("Error fetching air quality data", e);
+            model.addAttribute("error", "대기 데이터를 가져오지 못했습니다.");
+            return "error";
         }
-    } catch (Exception e) {
-        log.error("Error fetching air quality data", e);
-        model.addAttribute("error", "대기 데이터를 가져오지 못했습니다.");
-        return "error";
     }
-}
     @GetMapping("/hi")
     public String get(){
      return "hi";

@@ -1,21 +1,11 @@
 package com.example.air.airquality;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import org.springframework.stereotype.Component;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-import org.xml.sax.InputSource;
-
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.dom.DOMSource;
-import javax.xml.transform.stream.StreamResult;
 import java.io.IOException;
-import java.io.StringReader;
-import java.io.StringWriter;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.net.http.HttpClient;
@@ -24,24 +14,37 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionException;
-import java.util.concurrent.ExecutionException;
+import java.util.concurrent.*;
+
+import lombok.RequiredArgsConstructor;
+import jakarta.annotation.PreDestroy;
 
 @Component
+@RequiredArgsConstructor
 public class AirQualityFetcher {
-    private final HttpClient httpClient = HttpClient.newHttpClient();
+    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final HttpClient httpClient;
+    private final ExecutorService executorService;
+
+    public AirQualityFetcher() {
+        this.executorService = Executors.newVirtualThreadPerTaskExecutor();
+        this.httpClient = HttpClient.newBuilder()
+                .executor(executorService)
+                .build();
+    }
 
     public String fetchAirQualityData() throws IOException, InterruptedException, ExecutionException {
         LocalDate yesterday = LocalDate.now().minusDays(1);
-        String currentDate = yesterday.format(DateTimeFormatter.ISO_LOCAL_DATE);        // 병렬로 두 요청 실행
+        String currentDate = yesterday.format(DateTimeFormatter.ISO_LOCAL_DATE);
+
+        // Virtual Thread를 사용한 병렬 요청
         CompletableFuture<String> pm10Future = CompletableFuture.supplyAsync(() -> {
             try {
                 return fetchAirQualityDataByType(currentDate, "PM10");
             } catch (Exception e) {
                 throw new CompletionException(e);
             }
-        });
+        }, httpClient.executor().get());
 
         CompletableFuture<String> pm25Future = CompletableFuture.supplyAsync(() -> {
             try {
@@ -49,20 +52,20 @@ public class AirQualityFetcher {
             } catch (Exception e) {
                 throw new CompletionException(e);
             }
-        });
+        }, httpClient.executor().get());
 
-        // 두 결과 기다리고 합치기
+        // 병렬로 실행된 결과 조합
         String pm10Data = pm10Future.get();
         String pm25Data = pm25Future.get();
 
-        return combineXmlResponses(pm10Data, pm25Data);
+        return combineJsonResponses(pm10Data, pm25Data);
     }
 
     private String fetchAirQualityDataByType(String searchDate, String informCode) throws IOException, InterruptedException {
         StringBuilder urlBuilder = new StringBuilder("http://apis.data.go.kr/B552584/ArpltnInforInqireSvc/getMinuDustFrcstDspth");
 
         urlBuilder.append("?" + URLEncoder.encode("serviceKey", StandardCharsets.UTF_8) + "=LX1Fa5ExG4QlJxkuPAQj8DYylJiU1O1b40lWB0K4uk%2F%2FMjcRGyU5YJNBsFJxFhZ2PY49hPWeyZbQrMkKUEH6kA%3D%3D");
-        urlBuilder.append("&" + URLEncoder.encode("returnType", StandardCharsets.UTF_8) + "=" + URLEncoder.encode("xml", StandardCharsets.UTF_8));
+        urlBuilder.append("&" + URLEncoder.encode("returnType", StandardCharsets.UTF_8) + "=" + URLEncoder.encode("json", StandardCharsets.UTF_8));
         urlBuilder.append("&" + URLEncoder.encode("numOfRows", StandardCharsets.UTF_8) + "=" + URLEncoder.encode("100", StandardCharsets.UTF_8));
         urlBuilder.append("&" + URLEncoder.encode("pageNo", StandardCharsets.UTF_8) + "=" + URLEncoder.encode("1", StandardCharsets.UTF_8));
         urlBuilder.append("&" + URLEncoder.encode("searchDate", StandardCharsets.UTF_8) + "=" + URLEncoder.encode(searchDate, StandardCharsets.UTF_8));
@@ -70,58 +73,49 @@ public class AirQualityFetcher {
 
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(urlBuilder.toString()))
-                .header("Content-Type", "application/xml")
+                .header("Accept", "application/json")
                 .GET()
                 .build();
 
-        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-        return response.body();
+        return httpClient.send(request, HttpResponse.BodyHandlers.ofString()).body();
     }
 
-    private String combineXmlResponses(String pm10Xml, String pm25Xml) {
+    private String combineJsonResponses(String pm10Json, String pm25Json) {
         try {
-            // XML 파싱을 위한 DocumentBuilder 생성
-            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-            DocumentBuilder builder = factory.newDocumentBuilder();
+            // JSON 파싱
+            JsonNode pm10Node = objectMapper.readTree(pm10Json);
+            JsonNode pm25Node = objectMapper.readTree(pm25Json);
 
-            // PM10과 PM2.5 XML을 파싱
-            Document pm10Doc = builder.parse(new InputSource(new StringReader(pm10Xml)));
-            Document pm25Doc = builder.parse(new InputSource(new StringReader(pm25Xml)));
+            // 새로운 결합된 JSON 객체 생성
+            ObjectNode combinedJson = objectMapper.createObjectNode();
+            ObjectNode responseNode = combinedJson.putObject("response");
+            ObjectNode bodyNode = responseNode.putObject("body");
+            ArrayNode itemsNode = bodyNode.putArray("items");
 
-            // 새로운 결합된 XML 문서 생성
-            Document combinedDoc = builder.newDocument();
-            Element rootElement = combinedDoc.createElement("response");
-            combinedDoc.appendChild(rootElement);
-
-            Element bodyElement = combinedDoc.createElement("body");
-            rootElement.appendChild(bodyElement);
-
-            Element itemsElement = combinedDoc.createElement("items");
-            bodyElement.appendChild(itemsElement);
-
-            // PM10 items 복사
-            NodeList pm10Items = pm10Doc.getElementsByTagName("item");
-            for (int i = 0; i < pm10Items.getLength(); i++) {
-                Node importedNode = combinedDoc.importNode(pm10Items.item(i), true);
-                itemsElement.appendChild(importedNode);
+            // PM10 items 추가
+            JsonNode pm10Items = pm10Node.path("response").path("body").path("items");
+            if (pm10Items.isArray()) {
+                for (JsonNode item : pm10Items) {
+                    itemsNode.add(item);
+                }
             }
 
-            // PM2.5 items 복사
-            NodeList pm25Items = pm25Doc.getElementsByTagName("item");
-            for (int i = 0; i < pm25Items.getLength(); i++) {
-                Node importedNode = combinedDoc.importNode(pm25Items.item(i), true);
-                itemsElement.appendChild(importedNode);
+            // PM2.5 items 추가
+            JsonNode pm25Items = pm25Node.path("response").path("body").path("items");
+            if (pm25Items.isArray()) {
+                for (JsonNode item : pm25Items) {
+                    itemsNode.add(item);
+                }
             }
 
-            // XML을 문자열로 변환
-            TransformerFactory transformerFactory = TransformerFactory.newInstance();
-            Transformer transformer = transformerFactory.newTransformer();
-            StringWriter writer = new StringWriter();
-            transformer.transform(new DOMSource(combinedDoc), new StreamResult(writer));
-
-            return writer.toString();
+            // 결과를 예쁘게 포맷팅된 JSON 문자열로 변환
+            return objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(combinedJson);
         } catch (Exception e) {
-            throw new RuntimeException("XML 결합 중 오류 발생", e);
+            throw new RuntimeException("JSON 결합 중 오류 발생", e);
         }
     }
-}
+
+    @PreDestroy
+    public void cleanup() {
+        executorService.close();  // shutdown() 대신 close() 사용
+    }}
