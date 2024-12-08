@@ -13,6 +13,7 @@ import reactor.core.scheduler.Schedulers;
 
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.Unmarshaller;
+import java.io.BufferedReader;
 import java.io.Serializable;
 import java.io.StringReader;
 import java.time.LocalDateTime;
@@ -72,45 +73,46 @@ public class AirQualityController {
 //            }
 //        }).subscribeOn(Schedulers.boundedElastic());
 //    }
-    @GetMapping("/chart")
-    public String showChart(Model model) {
-        try {
-            String xmlResponse = airQualityFetcher.fetchAirQualityData();
-            log.debug("XML Response: {}", xmlResponse); // 로그 추가
+@GetMapping("/chart")
+public String showChart(Model model) {
+    try {
+        String xmlResponse = airQualityFetcher.fetchAirQualityData();
 
-            JAXBContext context = JAXBContext.newInstance(AirQualityResponse.class);
-            Unmarshaller unmarshaller = context.createUnmarshaller();
-            AirQualityResponse response = (AirQualityResponse) unmarshaller.unmarshal(
-                    new StringReader(xmlResponse));
+        // JAXB 컨텍스트를 static final로 캐시
+        final JAXBContext context = JAXBContext.newInstance(AirQualityResponse.class);
+        final Unmarshaller unmarshaller = context.createUnmarshaller();
 
-            List<AirQualityResponse.Item> items = response.getBody().getItems();
-            List<Map<String, String>> formattedData = items.stream()
+        // BufferedReader 사용
+        try (var reader = new BufferedReader(new StringReader(xmlResponse))) {
+            AirQualityResponse response = (AirQualityResponse) unmarshaller.unmarshal(reader);
+
+            // 스트림 처리 최적화
+            var formattedData = response.getBody().getItems().stream()
                     .filter(item -> item.getInformCode() != null)
-                    .map(item -> {
-                        Map<String, String> data = new HashMap<>();
-                        data.put("informCode", item.getInformCode());
-                        data.put("informGrade", item.getInformGrade());
-                        data.put("informData", item.getInformData());
-                        data.put("dataTime", item.getDataTime());
-                        return data;
-                    })
+                    .map(item -> Map.of(
+                            "informCode", item.getInformCode(),
+                            "informGrade", item.getInformGrade(),
+                            "informData", item.getInformData(),
+                            "dataTime", item.getDataTime()
+                    ))
                     .collect(Collectors.toList());
 
             model.addAttribute("airQualityData", formattedData);
             return "airQuality";
-        } catch (Exception e) {
-            log.error("Error fetching air quality data", e);
-            model.addAttribute("error", "대기 데이터를 가져오지 못했습니다.");
-            return "error";
         }
+    } catch (Exception e) {
+        log.error("Error fetching air quality data", e);
+        model.addAttribute("error", "대기 데이터를 가져오지 못했습니다.");
+        return "error";
     }
+}
     @GetMapping("/hi")
     public String get(){
      return "hi";
     }
 
 
-/*가져온데이터에서 등급원인 시간을 추출하는 메서드 */
+
 
 
 }
