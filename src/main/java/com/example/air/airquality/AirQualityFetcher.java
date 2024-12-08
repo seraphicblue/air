@@ -22,9 +22,9 @@ import jakarta.annotation.PreDestroy;
 @Component
 @RequiredArgsConstructor
 public class AirQualityFetcher {
-    private final ObjectMapper objectMapper = new ObjectMapper();
-    private final HttpClient httpClient;
-    private final ExecutorService executorService;
+    private final ObjectMapper objectMapper = new ObjectMapper();//JSON 처리를 위해서 사용
+    private final HttpClient httpClient; // HTTP 클라이언트 (Java 11 HttpClient 사용)
+    private final ExecutorService executorService;// 병렬 처리를 위한 ExecutorService
 
     public AirQualityFetcher() {
         this.executorService = Executors.newVirtualThreadPerTaskExecutor();
@@ -37,14 +37,14 @@ public class AirQualityFetcher {
         LocalDate yesterday = LocalDate.now().minusDays(1);
         String currentDate = yesterday.format(DateTimeFormatter.ISO_LOCAL_DATE);
 
-        // Virtual Thread를 사용한 병렬 요청
+        // Virtual Thread를 사용하여 병렬 요청, pm25,pm10 data를 각각 가져옴
         CompletableFuture<String> pm10Future = CompletableFuture.supplyAsync(() -> {
             try {
                 return fetchAirQualityDataByType(currentDate, "PM10");
             } catch (Exception e) {
                 throw new CompletionException(e);
             }
-        }, httpClient.executor().get());
+        }, executorService);
 
         CompletableFuture<String> pm25Future = CompletableFuture.supplyAsync(() -> {
             try {
@@ -52,12 +52,13 @@ public class AirQualityFetcher {
             } catch (Exception e) {
                 throw new CompletionException(e);
             }
-        }, httpClient.executor().get());
+        }, executorService);
 
         // 병렬로 실행된 결과 조합
         String pm10Data = pm10Future.get();
         String pm25Data = pm25Future.get();
 
+        // 두가지 결과를 합함
         return combineJsonResponses(pm10Data, pm25Data);
     }
 
@@ -70,7 +71,7 @@ public class AirQualityFetcher {
         urlBuilder.append("&").append(URLEncoder.encode("pageNo", StandardCharsets.UTF_8)).append("=").append(URLEncoder.encode("1", StandardCharsets.UTF_8));
         urlBuilder.append("&").append(URLEncoder.encode("searchDate", StandardCharsets.UTF_8)).append("=").append(URLEncoder.encode(searchDate, StandardCharsets.UTF_8));
         urlBuilder.append("&").append(URLEncoder.encode("InformCode", StandardCharsets.UTF_8)).append("=").append(URLEncoder.encode(informCode, StandardCharsets.UTF_8));
-
+        // HTTP 요청 생성 및 전송
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(urlBuilder.toString()))
                 .header("Accept", "application/json")
@@ -108,7 +109,7 @@ public class AirQualityFetcher {
                 }
             }
 
-            // 결과를 예쁘게 포맷팅된 JSON 문자열로 변환
+            // 결과를 포맷팅된 JSON 문자열로 변환
             return objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(combinedJson);
         } catch (Exception e) {
             throw new RuntimeException("JSON 결합 중 오류 발생", e);
@@ -117,5 +118,5 @@ public class AirQualityFetcher {
 
     @PreDestroy
     public void cleanup() {
-        executorService.close();  // shutdown() 대신 close() 사용
+        executorService.close();  // 애플리케이션 종료 시 ExecutorService 종료
     }}
