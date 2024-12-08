@@ -5,6 +5,8 @@ spring:
     view:
       prefix: /WEB-INF/views/
       suffix: .jsp
+    async:
+      request-timeout: -1  # SSE 연결 타임아웃 비활성화
   web:
     resources:
       static-locations: classpath:/static/

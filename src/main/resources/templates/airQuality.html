@@ -94,6 +94,68 @@
             }
         }
     });
+    // 페이지 로드 시 알림 권한 요청 및 알림 시스템 설정
+    document.addEventListener('DOMContentLoaded', async function() {
+        console.log("Initializing notification system...");
+
+        if (!("Notification" in window)) {
+            console.log("This browser does not support notifications");
+            return;
+        }
+
+        try {
+            const permission = await Notification.requestPermission();
+            console.log("Notification permission:", permission);
+
+            if (permission === "granted") {
+                // 웹소켓 연결
+                connectWebSocket();
+            }
+        } catch (err) {
+            console.error("Error requesting notification permission:", err);
+        }
+    });
+
+    // 웹소켓 연결 함수
+    function connectWebSocket() {
+        const socket = new WebSocket('ws://' + window.location.host + '/ws/notifications');
+
+        socket.onopen = function() {
+            console.log("WebSocket connected");
+        };
+
+        socket.onmessage = function(event) {
+            console.log("Received message:", event.data);
+            const data = JSON.parse(event.data);
+
+            // 알림 표시
+            new Notification(data.title, {
+                body: data.message,
+                requireInteraction: true
+            });
+        };
+
+        socket.onerror = function(error) {
+            console.error("WebSocket error:", error);
+        };
+
+        socket.onclose = function() {
+            console.log("WebSocket disconnected");
+            // 재연결 시도
+            setTimeout(connectWebSocket, 5000);
+        };
+    }
+
+    // 알림 표시 함수
+    function showNotification(title, message) {
+        console.log("Showing notification:", title, message);
+        if (Notification.permission === "granted") {
+            new Notification(title, {
+                body: message,
+                requireInteraction: true
+            });
+        }
+    }
 </script>
 </body>
 </html>

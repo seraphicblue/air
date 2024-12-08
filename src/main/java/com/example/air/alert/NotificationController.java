@@ -1,30 +1,24 @@
 package com.example.air.alert;
 
 
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
-@RestController
+@Slf4j
 @RequestMapping("/api/notifications")
+@RestController
+@RequiredArgsConstructor
 public class NotificationController {
     private final WebPushService webPushService;
 
-    @Autowired
-    public NotificationController(WebPushService webPushService) {
-        this.webPushService = webPushService;
-    }
-
-    @PostMapping("/send")
-    public void sendNotification(
-            @RequestParam String title,
-            @RequestParam String message
-    ) {
-        webPushService.sendPushNotification(
-                NotificationRequest.builder()
-                        .title(title)
-                        .message(message)
-                        .build()
-        );
-    }
+//    @GetMapping(value = "/subscribe", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+//    public SseEmitter subscribe() {
+//        return webPushService.subscribe();
+//    }
 }
 

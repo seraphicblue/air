@@ -53,8 +53,7 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
 
     //웹푸시
-    // Selenium 의존성 추가
-    implementation 'org.seleniumhq.selenium:selenium-java:4.16.1'
+    implementation 'org.springframework.boot:spring-boot-starter-websocket'
 
     // Virtual Threads를 위한 jakarta.servlet-api
     implementation 'jakarta.servlet:jakarta.servlet-api:6.0.0'
