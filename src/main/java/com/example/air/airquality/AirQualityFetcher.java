@@ -34,8 +34,8 @@ public class AirQualityFetcher {
     }
 
     public String fetchAirQualityData() throws IOException, InterruptedException, ExecutionException {
-        LocalDate yesterday = LocalDate.now().minusDays(1);
-        String currentDate = yesterday.format(DateTimeFormatter.ISO_LOCAL_DATE);
+        LocalDate today = LocalDate.now();
+        String currentDate = today.format(DateTimeFormatter.ISO_LOCAL_DATE);
 
         // Virtual Thread를 사용하여 병렬 요청, pm25,pm10 data를 각각 가져옴
         CompletableFuture<String> pm10Future = CompletableFuture.supplyAsync(() -> {
