@@ -13,9 +13,10 @@
     const airQualityData = /*[[${airQualityData}]]*/ [];
 
     function processAirQualityData(data) {
-        // 가장 최근의 데이터만 필터링 (23시 발표)
+        // 오늘 날짜의 데이터만 필터링 (00시 ~ 23시 발표)
+        const today = new Date().toISOString().slice(0, 10);
         const latestData = data.filter(item =>
-            item.dataTime.includes('23시 발표') &&
+            item.dataTime.startsWith(today) &&
             (item.informCode === 'PM10' || item.informCode === 'PM25')
         );
 

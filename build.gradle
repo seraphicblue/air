@@ -43,12 +43,6 @@ dependencies {
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 
-    //xml
-    implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-xml'
-    implementation 'javax.xml.bind:jaxb-api:2.3.1'
-    implementation 'org.glassfish.jaxb:jaxb-runtime:2.3.1'
-    implementation 'org.springframework:spring-oxm:5.3.9'
-
     //fe
     implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
 
@@ -62,7 +56,6 @@ dependencies {
 
 }
 
-// dependencies 블록 밖으로 이동
 tasks.named('test') {
     useJUnitPlatform()
 }
